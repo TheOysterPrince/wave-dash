@@ -34,7 +34,7 @@ directory <- "/var/lib/weclo/temp"
 # api call function ------------------------------------------------------
   
 # import python package for handling copernicus marine data
-use_virtualenv("/var/lib/weclo/python/copernicusmarine", required = TRUE)
+use_virtualenv("/var/lib/weclo//copernicusmarine", required = TRUE)
 CopernicusMarine <- import("copernicusmarine")
 
 
