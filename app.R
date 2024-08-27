@@ -28,7 +28,7 @@ for(pkg in packages){
 
 # global functions: -------------------------------------------------------
 # set working directory
-directory <- "/var/lib/weclo/temp"
+working_directory <- "/var/lib/weclo"
 
 
 # api call function ------------------------------------------------------
@@ -620,12 +620,12 @@ server <- function(input, output, session) {
       start_datetime = date_min,
       end_datetime = date_max,
       output_filename = "wave_data.nc",
-      output_directory = directory,                                       # use working directory as output directory
+      output_directory = working_directory,                                       # use working directory as output directory
       overwrite_output_data = TRUE,
       force_download = TRUE)
     
     
-    data <- nc_open(paste0(directory, "wave_data.nc"))
+    data <- nc_open(paste0(working_directory, "wave_data.nc"))
     
     dim_lon <- ncvar_get(data, "longitude")
     dim_lat <- ncvar_get(data, "latitude")
