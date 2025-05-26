@@ -113,7 +113,6 @@ final_tsk$set_col_roles("station", roles = "name")
 xgboost = lrn("regr.xgboost")
 
 # train model xgboost
-future::plan("multisession")
 xgboost$train(final_tsk)
 
 
