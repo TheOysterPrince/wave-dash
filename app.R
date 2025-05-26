@@ -645,11 +645,13 @@ ui <- page_navbar(
     title = div(class = "dashboard-heading", "About"),
     fluidPage(
                   title = h2("About"),
-                  p("This dashboard was developed as part of the master’s thesis \"A Machine Learning-Based Approach for Efficient and High-Resolution Modeling of Ocean Waves\"  at the "
+                  p("This dashboard was developed as part of the master’s thesis", tags$b("\"A Machine Learning-Based Approach for Efficient and High-Resolution Modeling of Ocean Waves\""),  "at the "
                     , tags$a(href = "https://tu-dresden.de/bu/verkehr/ivw/bda?set_language=en", "Chair of Big Data Analytics in Transportation (TT)"), "of TUD Dresden University of Technology.",
-                    "The aim is to provide an intuitive and efficient interface for ocean wave data prediction, with additional options to upscale and modulate the results. For any questions or issues, feel free to contact us via the email address below:"),
-                  p(tags$a(href = "mailto:wave-dashboard@outlook.com", "WAVE-Dashboard@outlook.com")
-                  )
+                    "The aim is to provide an intuitive and efficient interface for ocean wave data prediction, with additional options to upscale and modulate the results."),
+                  p("The dashboard was created using the software ", tags$a("R", href = "https://www.r-project.org/"), " in conjunction with the ", tags$a("shiny", href = "https://shiny.posit.co/"), "package.",
+                    "Shiny provides a framework for building interactive web applications and enables dynamic user interfaces with real time responses."),
+                  p("For any questions or issues, feel free to use the email address below:"),
+                  p(tags$a(href = "mailto:wave-dashboard@outlook.com", "WAVE-Dashboard@outlook.com")),
                 )
   ),
   
