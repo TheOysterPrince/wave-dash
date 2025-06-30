@@ -1,7 +1,7 @@
 # ==== Global Functions: =======================================================
 # ------ working directory and packages ----------------------------------------
 # list of libraries
-packages <- c(
+using(
   # basic packages
   "tidyverse",           # summary of basic r packages
   "lubridate",           # date and time manipulation
@@ -19,7 +19,7 @@ packages <- c(
   # spatial packages
   "ncdf4",               # marine data files access
   "terra",               # spatial raster datasets and manipulation
-  "pracma",              # distance calculation between geographical points
+  "geosphere",           # distance calculation between geographical points
   
   # mlr3 framwork
   "mlr3verse",           # machine learning for R
@@ -114,6 +114,7 @@ xgboost = lrn("regr.xgboost")
 
 # train model xgboost
 xgboost$train(final_tsk)
+
 
 
 # ==== Dashboard: ==============================================================
@@ -232,8 +233,8 @@ ui <- page_navbar(
      
       # map card for wave data selection
       card(
-        min_height = "60%",
-        full_screen = FALSE,
+        min_height = "70%",
+        full_screen = TRUE,
         card_header(div(class = "dashboard-heading", "Area and Date Selection"), 
                     popover(
                       title = "Plot Controls",
@@ -279,7 +280,8 @@ ui <- page_navbar(
                     class = "d-flex justify-content-between align-items-center"
                     ),
         uiOutput("ts_wave_meters_output", fill = TRUE)
-      )
+      ),
+      div(style = "height: 1px")
     ),
   ), 
 
@@ -334,7 +336,7 @@ ui <- page_navbar(
           full_screen = TRUE,
           card_header(div(class = "dashboard-heading", "Actual vs. Predicted Mean Significant Wave Height")),
           uiOutput("ts_wave_pred_actual_output", fill = TRUE),
-          tags$hr(style = "margin-top: 1px; margin-bottom: 1px;"),
+          #tags$hr(style = "margin-top: 1px; margin-bottom: 1px;"),
           fluidRow(
             column(width = 12,
             htmlOutput("prediction_scores")),
@@ -383,7 +385,8 @@ ui <- page_navbar(
         tags$li(tags$a(href = "#wiki_data_selection", "Data Selection")),
           tags$ul(
             tags$li(tags$a(href = "#wiki_data_origin", "Data Origin")),
-            tags$li(tags$a(href = "#wiki_data_steps", "Data Selection Steps"))
+            tags$li(tags$a(href = "#wiki_data_steps", "Data Selection Steps")),
+            tags$li(tags$a(href = "#wiki_data_area_limits", "Area-Time Limits"))
           ),
         br(),
         tags$li(tags$a(href = "#wiki_pred_upscaling", "Wave Prediction & Upscaling")),
@@ -431,9 +434,18 @@ ui <- page_navbar(
           tags$li("Select area on the map by clicking at two points"),
           tags$li("Press API-CALL to start the data retrival"),
         ),
-        p("Depending on the selected area and time period the download process will take a moment.
-          The small gear icon in the wave plot header allows browsing the map resource in three hour increments within the selected time period."),
-        br(),
+        p("The small gear icon in the wave plot header allows browsing the map resource in three-hour increments within the selected time period.")
+      ),
+      div(id = "wiki_data_area_limits",  
+        p(class = "bold-heading", "Area-Time limits and usage notes:"),
+        p("Depending on the selected area and time period, the download process may take a moment. Longer time periods require smaller spatial selections, which are therefore limited as follows to ensure dashboard performance."),
+        tags$ul(
+          tags$li(tags$b("≤ 7 days:"), " max area = 1.000.000 km² (1000×1000 km)"),
+          tags$li(tags$b("8–14 days:"), " max area = 22.500 km² (150×150 km)"),
+          tags$li(tags$b("15–31 days:"), " max area = 10.000 km² (100×100 km)"),
+          tags$li(tags$b("> 31 days:"), " max area = 2.500 km² (50×50 km)")
+        ),
+        br()
       ),
       
       div(id = "wiki_pred_upscaling",
@@ -785,39 +797,118 @@ selected_bounds <- reactiveValues(bounds = NULL)
 # creates a list of bounds in form of: (lat1, lon1, lat2, lon2) which are the corners of a rectangle
 # source: https://gis.stackexchange.com/questions/345610/shiny-leaflet-click-event-returns-null-when-clicked-again
 
-observeEvent(input$map_click, {
-
-  # each map click is saved to click 
+ observeEvent(input$map_click, {
+  
+  # each map click is saved to click   
   click <- input$map_click
   
-  # if click is empty (first click), the click data will be save es the first two coordinates in selected_bounds$bounds
-  if (!is.null(click)) {
-    lat <- click$lat
-    lon <- click$lng
-    if (is.null(selected_bounds$bounds)) {
-      selected_bounds$bounds <- c(lat, lon, NA, NA)
-      
-    # when click is not empty (second click), the coordinates will be saved as the third and fourth value of selected_bounds$bounds
-    } else if (is.na(selected_bounds$bounds[3]) || is.na(selected_bounds$bounds[4])) {
-      selected_bounds$bounds[3] <- lat
-      selected_bounds$bounds[4] <- lon
-      
-      # the selected_bounds will be plotted as a rectangle over the initial map
-      leafletProxy("map") %>%
-        addRectangles(
-          lng1 = selected_bounds$bounds[2], lat1 = selected_bounds$bounds[1],
-          lng2 = selected_bounds$bounds[4], lat2 = selected_bounds$bounds[3],
-          stroke = TRUE, weight = 1, color = "rgba(0, 179, 252, 1)"
-        )
-      
-      # a third click will clear the previous leaflet shapes and click information, but also set the new "first click" of the new rectangle
-    } else {
-      selected_bounds$bounds <- c(lat, lon, NA, NA)
-      leafletProxy("map") %>%
-        clearShapes()
-    }
+  # if selected bounds is empty use click coordinates, otherwise use existing start point (important for thrid click)
+  lat1 <- if (is.null(selected_bounds$bounds)) click$lat else selected_bounds$bounds[1]
+  lon1 <- if (is.null(selected_bounds$bounds)) click$lng else selected_bounds$bounds[2]
+  
+  # create custom marker icons for click points
+  punktIcons <- awesomeIconList(
+    "1" = makeAwesomeIcon(
+      icon = "1",           
+      library = "fa",
+      markerColor = "blue",
+      iconColor = "white"
+    ),
+    "2" = makeAwesomeIcon(
+      icon = "2",           
+      library = "fa",
+      markerColor = "blue",
+      iconColor = "white"
+    )
+  )
+  
+  # if click is empty (first & third click), the click data will be save es the first two coordinates in selected_bounds$bounds
+  if (is.null(selected_bounds$bounds) || !any(is.na(selected_bounds$bounds))) {
+    
+    # set coordinates for first click 
+    selected_bounds$bounds <- c(click$lat, click$lng, NA, NA)  # 
+   
+    # clear existing shapes and add the first marker
+    leafletProxy("map") %>%
+      clearMarkers() %>%
+      clearShapes() %>%
+      addAwesomeMarkers(lng = click$lng, lat = click$lat, icon = punktIcons["1"])
+    return()
   }
-})
+  
+    # check date range to restrict area
+    date_range <- input$custom_datepicker
+    if (is.null(date_range) || length(date_range) != 2) {
+      showNotification("Please select time period.", type = "warning")
+      return()
+    }
+
+  # calc. days between selected dates
+  days_diff <- as.numeric(difftime(date_range[2], date_range[1], units = "days"))
+
+  # define max area in km² depending on days_diff
+  max_area <- if (days_diff <= 7) {
+    1000^2
+  } else if (days_diff <= 14) {
+    150^2
+  } else if (days_diff <= 31) {
+    100^2
+  } else {
+    50^2
+  }
+  
+  # calc. lat and lon distances in order to restrict area and adjust map area
+  lat_dist <- distHaversine(c(lon1, lat1), c(lon1, click$lat), r = 6371000) / 1000
+  lon_dist <- distHaversine(c(lon1, lat1), c(click$lng, lat1), r = 6371000) / 1000
+  
+  # area calc.
+  area <- lat_dist * lon_dist
+
+  # if the selected area is to large, for the specified time period it will be reduced to max_area
+  if (area > max_area && !is.infinite(max_area)) {
+    sf <- sqrt(max_area / area)
+    new_lat_dist <- lat_dist * sf
+    new_lon_dist <- lon_dist * sf
+    
+    # calc new reduced coordinates
+    new_lat_point <- destPoint(c(lon1, lat1), b = ifelse(click$lat >= lat1, 0, 180), d = new_lat_dist * 1000, r = 6371000)[2]
+    new_lon_point <- destPoint(c(lon1, lat1), b = ifelse(click$lng >= lon1, 90, 270), d = new_lon_dist * 1000, r = 6371000)[1]
+    
+    # new lat and lon points
+    lat2 <- new_lat_point
+    lon2 <- new_lon_point
+    
+    # show notification
+    showNotification(paste("Note: Area has been limited to ~", format(max_area, scientific = FALSE, big.mark = "."), "km²."), type = "message")
+  } else {
+    
+    # if selected area is not to large, save as lat2, lon2
+    lat2 <- click$lat
+    lon2 <- click$lng
+  }
+
+  # savelat2, lon2 to selected_bounds
+  selected_bounds$bounds[3:4] <- c(lat2, lon2)
+  
+  # clear all previous second markers and shapes and add new second markers and area shape
+  leafletProxy("map") %>%
+    clearMarkers() %>%
+    clearShapes() %>%
+    addAwesomeMarkers(lng = c(lon1, lon2), lat = c(lat1, lat2),
+                      icon = punktIcons[c("1", "2")]) %>%
+    addRectangles(
+      lng1 = lon1, lat1 = lat1,
+      lng2 = lon2, lat2 = lat2,
+      stroke = TRUE, weight = 2, color = "#00b3fc"
+    )
+ }
+)
+  # final leaflet output
+  output$map <- renderLeaflet({
+    leaflet() %>%
+      addTiles() %>%
+      setView(lng = 10, lat = 51, zoom = 3.5)
+  })
 
 
 # text output under map
@@ -825,8 +916,15 @@ observeEvent(input$map_click, {
   if (!is.null(selected_bounds$bounds) && !anyNA(selected_bounds$bounds)) {
     
     # calculation of distance between 2 points on earth using haversine formula (great circle distance)
-    lat_distance <- haversine(c(selected_bounds$bounds[1], selected_bounds$bounds[2]), c(selected_bounds$bounds[3], selected_bounds$bounds[2]), R = 6378.137)
-    lon_distance <- haversine(c(selected_bounds$bounds[3], selected_bounds$bounds[2]), c(selected_bounds$bounds[3], selected_bounds$bounds[4]), R = 6378.137)
+    lat_distance <- distHaversine(
+      c(selected_bounds$bounds[2], selected_bounds$bounds[1]),  
+      c(selected_bounds$bounds[2], selected_bounds$bounds[3]),
+      r = 6371000) / 1000  
+    
+    lon_distance <- distHaversine(
+      c(selected_bounds$bounds[2], selected_bounds$bounds[3]),  
+      c(selected_bounds$bounds[4], selected_bounds$bounds[3]),
+      r = 6371000) / 1000
     
     # actual text output under the map
     div(class = "map-output-text",
@@ -865,10 +963,13 @@ observeEvent(input$start_api_call, {
   
   # to prevent downloading of the entire data set, check if selected_bounds$bounds is empty
   if (is.null(selected_bounds$bounds) || anyNA(selected_bounds$bounds)) {
-  # show error massage
-  showNotification("No area selected!", type = "error")
-  } else 
-  
+    # shoe error message
+    showNotification("Please select area before starting the API call!", type = "error")
+    
+    # stop api call here
+    return()  
+  }
+
   # progress notification
   progress <- shiny::Progress$new(min = 0, max = 5)
   progress$set(message = "API Call started", value = 0)
@@ -885,6 +986,16 @@ observeEvent(input$start_api_call, {
   # progress update 1: api call started
   update_progress(progress, "API-Call started, this will take a moment")
   
+  # create temporary directory within the main working directory
+  temp_subdir <- file.path(working_directory, "tmp")
+  
+  # check if subdir already exists
+  dir.create(temp_subdir, showWarnings = FALSE)  
+
+  # create temporary file within temp directory
+  temp_file <- tempfile(pattern = "copernicus_", tmpdir = temp_subdir, fileext = ".nc")
+
+  
   # api call command (reticulate python function)
   CopernicusMarine$subset(
     dataset_id= "cmems_mod_glo_wav_anfc_0.083deg_PT3H-i",               
@@ -897,13 +1008,13 @@ observeEvent(input$start_api_call, {
     maximum_latitude = lat[2],
     start_datetime = date_min,
     end_datetime = date_max,
-    output_filename = "dashboard_data.nc",
-    output_directory = working_directory,,                                     
+    output_filename = basename(temp_file),    
+    output_directory = dirname(temp_file),                                        
     overwrite = "True")
   
   
   # open netcdf file
-  data_cop <- nc_open(paste0(working_directory, "dashboard_data.nc"))
+  data_cop <- nc_open(temp_file)
   
   # get time dimensions
   dim_lon <- ncvar_get(data_cop, "longitude")
@@ -934,6 +1045,9 @@ observeEvent(input$start_api_call, {
   
   # close the netcdf file
   nc_close(data_cop)
+  
+  # remove temp files
+  file.remove(temp_file)
   
   # create finial data table
   wave <- as.data.table(bind_cols(coords, wave_cop))
@@ -1132,7 +1246,7 @@ observeEvent(input$start_api_call, {
     span(HTML(paste0(
       "<strong>MAE:</strong> ", round(pred_results[1], 3), " m&nbsp;&nbsp;",
       "<strong>RMSE:</strong> ", round(pred_results[2], 3), " m&nbsp;&nbsp;",
-      "<strong>MAPE:</strong> ", round(pred_results[3], 3), " %"
+      "<strong>MAPE:</strong> ", round(pred_results[3]*100, 3), " %"
     )))
   )  
   })
@@ -1310,7 +1424,7 @@ output$ts_wave_pred_actual_output <- renderUI({
   if (input$start_api_call == 0) {
     div(
       p("Wating for API Call..."),
-      style = "display: flex; align-items: center; justify-content: center; height: 100%;"
+      style = "display: flex; align-items: center; justify-content: center; min-height: 300px; height: 100%;"
     )
   } else {
     plotlyOutput("ts_wave_pred_actual_plot")
