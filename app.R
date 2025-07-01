@@ -93,31 +93,8 @@ degrees_to_direction <- function(degree) {
 
 
 # ------ ml-model training -----------------------------------------------------
-# read copernicus file of all stations
-model_data <- as.data.table(read_parquet(paste0("/var/lib/wavedash/", "wave_cop.parquet")))
-
-# final training data
-final_data <- model_data %>% 
-                  select(lat, lon, time, station, VHM0, VCMX, VHM0_SW1, VTM01_WW, VTM02)
-
-# defining benchmark task
-final_tsk <- as_task_regr_st(final_data,
-                           id = "final", target = "VHM0",
-                           coordinate_names = c("lon", "lat"), coords_as_features = FALSE,
-                           crs = "4326")
-
-# setting role for time/ date variable 
-final_tsk$set_col_roles("time", roles = "time")
-final_tsk$set_col_roles(c("lon","lat"), roles = "space")
-final_tsk$set_col_roles("station", roles = "name")
-
-# define learner
-xgboost = lrn("regr.xgboost")
-
-# train model xgboost
-xgboost$train(final_tsk)
-
-
+# load task and trained model  
+load("model_and_task.RData")
 
 # ==== Dashboard: ==============================================================
 # ------ ui section ------------------------------------------------------------
