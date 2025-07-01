@@ -1,7 +1,8 @@
 # ==== Global Functions: =======================================================
 # ------ working directory and packages ----------------------------------------
 # list of libraries
-using(
+packages <- c(
+  
   # basic packages
   "tidyverse",           # summary of basic r packages
   "lubridate",           # date and time manipulation
