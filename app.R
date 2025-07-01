@@ -7,7 +7,6 @@ packages <- c(
   "tidyverse",           # summary of basic r packages
   "lubridate",           # date and time manipulation
   "data.table",          # efficient large table handling
-  "arrow",               # reading and writing parquet files
   
   # plot packages
   "plotly",              # 3d plot
