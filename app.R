@@ -43,10 +43,10 @@ for(pkg in packages){
 }
 
 # set working directory
-working_directory <- "/var/lib/wave-dash/temp"
+working_directory <- "/var/lib/wavedash/temp"
 
 # import python package for handling copernicus marine data
-use_virtualenv("/var/lib/wave-dash/copernicusmarine", required = TRUE)
+use_virtualenv("/var/lib/wavedash/copernicusmarine", required = TRUE)
 CopernicusMarine <- import("copernicusmarine")
 
 # ------ wave direction function -----------------------------------------------
@@ -94,7 +94,7 @@ degrees_to_direction <- function(degree) {
 
 # ------ ml-model training -----------------------------------------------------
 # read copernicus file of all stations
-model_data <- as.data.table(read_parquet(paste0("/var/lib/wave-dash/", "wave_cop.parquet")))
+model_data <- as.data.table(read_parquet(paste0("/var/lib/wavedash/", "wave_cop.parquet")))
 
 # final training data
 final_data <- model_data %>% 
