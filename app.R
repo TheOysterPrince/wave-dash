@@ -1,3 +1,5 @@
+# virtuelles evironment wie in R-Code implementieren (credentials nicht in skript?!?)
+
 # ==== Global Functions: =======================================================
 # ------ working directory and packages ----------------------------------------
 # list of libraries
@@ -964,14 +966,14 @@ observeEvent(input$start_api_call, {
   # progress update 1: api call started
   update_progress(progress, "API-Call started, this will take a moment")
   
-  # create temporary directory within the main working directory
-  temp_subdir <- file.path(working_directory, "tmp")
-  
-  # check if subdir already exists
-  dir.create(temp_subdir, showWarnings = FALSE)  
-
-  # create temporary file within temp directory
-  temp_file <- tempfile(pattern = "copernicus_", tmpdir = temp_subdir, fileext = ".nc")
+  # # create temporary directory within the main working directory
+  # temp_subdir <- file.path(working_directory, "tmp")
+  # 
+  # # check if subdir already exists
+  # dir.create(temp_subdir, showWarnings = FALSE)  
+  # 
+  # # create temporary file within temp directory
+  # temp_file <- tempfile(pattern = "copernicus_", tmpdir = temp_subdir, fileext = ".nc")
 
   
   # api call command (reticulate python function)
@@ -986,13 +988,13 @@ observeEvent(input$start_api_call, {
     maximum_latitude = lat[2],
     start_datetime = date_min,
     end_datetime = date_max,
-    output_filename = basename(temp_file),    
-    output_directory = dirname(temp_file),                                        
-    overwrite = "True")
+    output_filename = "wave_data.nc",   
+    output_directory = working_directory,                                        
+    overwrite = TRUE)
   
   
   # open netcdf file
-  data_cop <- nc_open(temp_file)
+  data_cop <- nc_open(paste0(working_directory, "wave_data.nc"))
   
   # get time dimensions
   dim_lon <- ncvar_get(data_cop, "longitude")
@@ -1025,7 +1027,7 @@ observeEvent(input$start_api_call, {
   nc_close(data_cop)
   
   # remove temp files
-  file.remove(temp_file)
+  # file.remove(temp_file)
   
   # create finial data table
   wave <- as.data.table(bind_cols(coords, wave_cop))
