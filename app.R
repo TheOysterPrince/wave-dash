@@ -654,14 +654,7 @@ ui <- page_navbar(
 
 # ------ server section --------------------------------------------------------
 server <- function(input, output, session) {
-  
-    # Prüfe, ob xgboost und final_tsk vorhanden sind
-  if (!exists("xgboost") || !exists("final_tsk")) {
-    showNotification("❌ Fehlende Objekte: Modell oder Task nicht geladen.", type = "error", duration = NULL)
-  } else {
-    showNotification("✅ Modell und Task erfolgreich geladen.", type = "message", duration = 5)
-  }
-  
+
 # -------- time slider inputs and in dashboard navigation functions ------------
 
 # function to update progress
@@ -1001,7 +994,7 @@ observeEvent(input$start_api_call, {
   
   
   # open netcdf file
-  data_cop <- nc_open(file.path(working_directory, "wave_data.nc"))
+  data_cop <- nc_open(paste0(working_directory, "/wave_data.nc"))
   
   # get time dimensions
   dim_lon <- ncvar_get(data_cop, "longitude")
