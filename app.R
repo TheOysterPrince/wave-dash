@@ -1049,6 +1049,8 @@ observeEvent(input$start_api_call, {
     VTM02    = round(mean(VTM02,  na.rm = TRUE), 2)
   )
   
+  head(wave)
+  
 # ---------- plot mean predictive variables ------------------------------------
   # ploty output mean time series from selected area for variables measured in meters
   output$ts_wave_meters_plot <- renderPlotly({
@@ -1112,9 +1114,7 @@ observeEvent(input$start_api_call, {
   # create new prediction dataset
   pred_data <- wave %>%
                 select(lat, lon, time, VHM0, VCMX, VHM0_SW1, VTM01_WW, VTM02) 
-  
-  xgboost
-  
+
   # in domain normal (10080 obs)
   pred_xgboost <- xgboost$predict_newdata(final_tsk, newdata = pred_data)
   pred_results <- pred_xgboost$score(msrs(list("regr.mae", "regr.rmse", "regr.mape")))
