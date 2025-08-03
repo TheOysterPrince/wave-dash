@@ -1113,13 +1113,11 @@ observeEvent(input$start_api_call, {
   pred_data <- wave %>%
                 select(lat, lon, time, VHM0, VCMX, VHM0_SW1, VTM01_WW, VTM02) 
   
-  load("model_and_task.RData")
-  
   # create deep clone of final_tsk 
-  copy_tsk <- final_tsk$clone(deep = TRUE)
+  copy_tsk <<- final_tsk$clone(deep = TRUE)
 
   # predict on new data using the created deep clone of the task
-  pred_xgboost <- xgboost$predict_newdata(copy_tsk, newdata = pred_data)
+  pred_xgboost <<- xgboost$predict_newdata(copy_tsk, newdata = pred_data)
   pred_results <- pred_xgboost$score(msrs(list("regr.mae", "regr.rmse", "regr.mape")))
   
   # add prediction to selected area dataset 
