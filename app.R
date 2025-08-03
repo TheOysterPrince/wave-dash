@@ -1032,13 +1032,11 @@ observeEvent(input$start_api_call, {
   # create finial data table
   wave <- as.data.table(bind_cols(coords, wave_cop))
   
-  tryCatch({
-  wave <- as.data.table(bind_cols(coords, wave_cop))
+  if (exists("wave") && is.data.table(wave)) {
   showNotification("✅ 'wave' erfolgreich erstellt.", type = "message", duration = 5)
-}, error = function(e) {
-  showNotification(paste("❌ Fehler beim Erstellen von 'wave':", e$message),
-                   type = "error", duration = NULL)
-})
+} else {
+  showNotification("❌ 'wave' fehlt oder ist kein data.table.", type = "error", duration = NULL)
+}
 
   
   # omit na's in case missing values
