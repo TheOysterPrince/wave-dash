@@ -97,9 +97,6 @@ degrees_to_direction <- function(degree) {
 # load task and trained model  
 load("model_and_task.RData")
 
-# create original task
-original_tsk <- final_tsk
-
 # ==== Dashboard: ==============================================================
 # ------ ui section ------------------------------------------------------------
 
@@ -658,6 +655,13 @@ ui <- page_navbar(
 # ------ server section --------------------------------------------------------
 server <- function(input, output, session) {
   
+    # Prüfe, ob xgboost und final_tsk vorhanden sind
+  if (!exists("xgboost") || !exists("final_tsk")) {
+    showNotification("❌ Fehlende Objekte: Modell oder Task nicht geladen.", type = "error", duration = NULL)
+  } else {
+    showNotification("✅ Modell und Task erfolgreich geladen.", type = "message", duration = 5)
+  }
+  
 # -------- time slider inputs and in dashboard navigation functions ------------
 
 # function to update progress
@@ -1115,12 +1119,9 @@ observeEvent(input$start_api_call, {
   # create new prediction dataset
   pred_data <- wave %>%
                 select(lat, lon, time, VHM0, VCMX, VHM0_SW1, VTM01_WW, VTM02) 
-  
-  #create a deep clone of data to predict
-  task_to_pred <- original_tsk$clone(deep = TRUE)
 
   # in domain normal (10080 obs)
-  pred_xgboost <- xgboost$predict_newdata(task_to_pred, newdata = pred_data)
+  pred_xgboost <- xgboost$predict_newdata(final_tsk, newdata = pred_data)
   pred_results <- pred_xgboost$score(msrs(list("regr.mae", "regr.rmse", "regr.mape")))
   
   # add prediction to selected area dataset 
