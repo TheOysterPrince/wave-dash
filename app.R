@@ -994,7 +994,7 @@ observeEvent(input$start_api_call, {
   
   
   # open netcdf file
-  data_cop <- nc_open(paste0(working_directory, "wave_data.nc"))
+  data_cop <- nc_open(file.path(working_directory, "wave_data.nc"))
   
   # get time dimensions
   dim_lon <- ncvar_get(data_cop, "longitude")
