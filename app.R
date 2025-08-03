@@ -1032,13 +1032,6 @@ observeEvent(input$start_api_call, {
   # create finial data table
   wave <- as.data.table(bind_cols(coords, wave_cop))
   
-  if (exists("wave") && is.data.table(wave)) {
-  showNotification("✅ 'wave' erfolgreich erstellt.", type = "message", duration = 5)
-} else {
-  showNotification("❌ 'wave' fehlt oder ist kein data.table.", type = "error", duration = NULL)
-}
-
-  
   # omit na's in case missing values
   wave <- na.omit(wave)
   
@@ -1119,9 +1112,12 @@ observeEvent(input$start_api_call, {
   # create new prediction dataset
   pred_data <- wave %>%
                 select(lat, lon, time, VHM0, VCMX, VHM0_SW1, VTM01_WW, VTM02) 
+  
+  # create deep clone of final_tsk 
+  copy_tsk <- final_tsk$clone(deep = TRUE)
 
-  # in domain normal (10080 obs)
-  pred_xgboost <- xgboost$predict_newdata(final_tsk, newdata = pred_data)
+  # predict on new data using the created deep clone of the task
+  pred_xgboost <- learner$predict_newdata(copy_tsk, newdata = pred_data)
   pred_results <- pred_xgboost$score(msrs(list("regr.mae", "regr.rmse", "regr.mape")))
   
   # add prediction to selected area dataset 
