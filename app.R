@@ -1114,6 +1114,7 @@ observeEvent(input$start_api_call, {
                 select(lat, lon, time, VHM0, VCMX, VHM0_SW1, VTM01_WW, VTM02) 
 
   # predict on new data using the created deep clone of the task
+  pred_xgboost <- NULL
   pred_xgboost <- xgboost$predict_newdata(newdata = pred_data)
   pred_results <- pred_xgboost$score(msrs(list("regr.mae", "regr.rmse", "regr.mape")))
   
