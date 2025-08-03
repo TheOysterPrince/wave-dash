@@ -1117,7 +1117,7 @@ observeEvent(input$start_api_call, {
   copy_tsk <- final_tsk$clone(deep = TRUE)
 
   # predict on new data using the created deep clone of the task
-  pred_xgboost <- learner$predict_newdata(copy_tsk, newdata = pred_data)
+  pred_xgboost <- xgboost$predict_newdata(copy_tsk, newdata = pred_data)
   pred_results <- pred_xgboost$score(msrs(list("regr.mae", "regr.rmse", "regr.mape")))
   
   # add prediction to selected area dataset 
