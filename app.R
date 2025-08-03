@@ -2,6 +2,13 @@
 
 # ==== Global Functions: =======================================================
 # ------ working directory and packages ----------------------------------------
+
+# custom package profile for mlr3extralearners
+options(repos = c(
+  mlrorg = "https://mlr-org.r-universe.dev",
+  CRAN = "https://cloud.r-project.org/"
+))
+
 # list of libraries
 packages <- c(
   
