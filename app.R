@@ -3,6 +3,9 @@
 # ==== Global Functions: =======================================================
 # ------ working directory and packages ----------------------------------------
 
+# local library path
+.libPaths(c("/var/lib/wavedash/r_dependencies", .libPaths()))
+
 # list of libraries
 packages <- c(
   
