@@ -4,7 +4,7 @@
 # ------ working directory and packages ----------------------------------------
 
 # local library path
-.libPaths(c("/var/lib/wavedash/r_dependencies", .libPaths()))
+.libPaths("/var/lib/wavedash/r_dependencies")
 
 # list of libraries
 packages <- c(
