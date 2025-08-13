@@ -36,7 +36,8 @@ packages <- c(
   "shinyWidgets",        # date/ time picker
   "leaflet",             # maps
   "bslib",               # bootstrap ui toolkit (predefined shiny theme) 
-  "bsicons"              # bootstrap icons
+  "bsicons",             # bootstrap icons
+  "htmltools"            # html extension 
 )
 
 
@@ -1439,64 +1440,64 @@ output$ts_wave_pred_actual_output <- renderUI({
 
 # ---------- download handling prediction panel --------------------------------  
 
-# # download handling for upsacled wave field data
-# output$download_upscaled_wave_data <- downloadHandler(
-#   filename = "upscaled_wave_data.csv",
-#   content = function(file) {
-#   # define data from the reactive values data_to_upscale$data
-#     data <- data_to_upscale$data 
-#     
-#     create_variable_rasterstack <- function(var_name) {
-#     
-#     # extract and sort unique time points for selected variable
-#     t_unique<- sort(unique(data$time))
-#     
-#     # iterate over all time points given by t_unique and create raster
-#     rast_layers <- lapply(seq_along(t_unique), function(i) {
-#       # select time point i
-#       t <- t_unique[i]
-#       # create raster of variable and time point i
-#       rast <- rast(select(filter(data, time == t), lon, lat, all_of(var_name)), type = "xyz", crs = "EPSG:4326")
-#       return(rast)
-#     })
-#     
-#     # create a terra Spatraster object for one variable with all time points
-#     rast(rast_layers)
-#     }
-#     
-#     # get all variable names from data frame which are not lon, lat, time
-#     all_feat <- setdiff(names(data), c("lon", "lat", "time"))
-#     
-#     # interate over all variables and create a list of rasters
-#     raster_list <- lapply(all_feat, create_variable_rasterstack)
-#     
-#     # convert the list of rasters to a Spatraster object
-#     data_spatraster <- rast(raster_list)
-#     
-#     # match the the number of layers for the time argument by repeating the unique times of data
-#     repeated_times <- rep(unique(data$time), length.out = nlyr(data_spatraster))
-#     
-#     # set time attribute of spatraster
-#     time(data_spatraster) <- repeated_times
-#     
-#     # interpolate by upscaling factor
-#     data_upscaled <- disagg(data_spatraster, fact = input$upscale_factor, method = "bilinear")
-#     
-#     # convert back to dataframe for defining mlr task
-#     data_upscaled <- as.data.frame(data_upscaled, xy = TRUE, time = TRUE, wide = FALSE)
-#     
-#     # convert back into wide format
-#     data_upscaled_df <- data_upscaled %>%
-#     pivot_wider(
-#       names_from = layer,
-#       values_from = values
-#     ) %>%
-#     rename(lon = x, lat = y)
-# 
-#     # CSV exportieren
-#     write.csv(data_upscaled_df, file, row.names = FALSE)
-#   }
-# )
+# download handling for upsacled wave field data
+output$download_upscaled_wave_data <- downloadHandler(
+  filename = "upscaled_wave_data.csv",
+  content = function(file) {
+  # define data from the reactive values data_to_upscale$data
+    data <- data_to_upscale$data 
+    
+    create_variable_rasterstack <- function(var_name) {
+    
+    # extract and sort unique time points for selected variable
+    t_unique<- sort(unique(data$time))
+    
+    # iterate over all time points given by t_unique and create raster
+    rast_layers <- lapply(seq_along(t_unique), function(i) {
+      # select time point i
+      t <- t_unique[i]
+      # create raster of variable and time point i
+      rast <- rast(select(filter(data, time == t), lon, lat, all_of(var_name)), type = "xyz", crs = "EPSG:4326")
+      return(rast)
+    })
+    
+    # create a terra Spatraster object for one variable with all time points
+    rast(rast_layers)
+    }
+    
+    # get all variable names from data frame which are not lon, lat, time
+    all_feat <- setdiff(names(data), c("lon", "lat", "time"))
+    
+    # interate over all variables and create a list of rasters
+    raster_list <- lapply(all_feat, create_variable_rasterstack)
+    
+    # convert the list of rasters to a Spatraster object
+    data_spatraster <- rast(raster_list)
+    
+    # match the the number of layers for the time argument by repeating the unique times of data
+    repeated_times <- rep(unique(data$time), length.out = nlyr(data_spatraster))
+    
+    # set time attribute of spatraster
+    time(data_spatraster) <- repeated_times
+    
+    # interpolate by upscaling factor
+    data_upscaled <- disagg(data_spatraster, fact = input$upscale_factor, method = "bilinear")
+    
+    # convert back to dataframe for defining mlr task
+    data_upscaled <- as.data.frame(data_upscaled, xy = TRUE, time = TRUE, wide = FALSE)
+    
+    # convert back into wide format
+    data_upscaled_df <- data_upscaled %>%
+    pivot_wider(
+      names_from = layer,
+      values_from = values
+    ) %>%
+    rename(lon = x, lat = y)
+
+    # CSV exportieren
+    write.csv(data_upscaled_df, file, row.names = FALSE)
+  }
+)
 
 
 # download handling for predicted wave field data
